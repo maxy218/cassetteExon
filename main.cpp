@@ -7,40 +7,15 @@
 #include <vector>
 
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
+#include "class.h"
 #include "common.h"
+#include "const.h"
+#include "read_gtf.h"
 
 using namespace std;
 using namespace boost;
-
-typedef int _chr_coor;
-const string KEY_DLM = ":";
-const string VAL_DLM = ":";
-const double EPSILON = 1.0e-8;
-
-string itoa(int i){
-  stringstream ss (stringstream::in | stringstream::out);
-  ss.str("");
-  ss << i;
-  return ss.str();
-}
-
-// get gene or transcript id from the last field of gtf.
-string get_id_gtf(const string& field, const string& id_type){
-  size_t idx = field.find(id_type);
-  size_t left = idx + id_type.size();
-  size_t len = field.size();
-  while(left < len && field[left] != '\"'){
-    ++left;
-  }
-
-  size_t right = left + 1;
-  while(right < len && field[right] != '\"'){
-    ++right;
-  }
- 
-  return field.substr(left + 1, right - left - 1); 
-}
 
 //This function deal with gtf file.
 //exon_gene_map: key: position information. (chr)_(pos/neg)_(start)_(end)
@@ -67,13 +42,31 @@ void get_exon_gene_map_gtf(ifstream & gtf_anno_file, unordered_map<string, strin
     start_pos = atoi(fields[3].c_str()) - 1; // "-1" is because the GTF starts from 1, not 0 (which is refFlat style.)
     end_pos = atoi(fields[4].c_str()); // the end position is the same with refflat.
 
-    string key = fields[0] + KEY_DLM + fields[6] + KEY_DLM + itoa(start_pos) + KEY_DLM + itoa(end_pos);
+    string key = fields[0] + KEY_DLM + fields[6] + KEY_DLM + itoa_ss(start_pos) + KEY_DLM + itoa_ss(end_pos);
 
     if(exon_gene_map.find(key) == exon_gene_map.end()){
       exon_gene_map[key] = gene_id + VAL_DLM + trans_id;
     }
     else{
       exon_gene_map[key] += "\t" + gene_id + VAL_DLM + trans_id;
+    }
+  }
+
+  //erase the exons belonging to multipul genes.
+  vector<string> id = vector<string>(2);
+  unordered_map<string, string>::iterator iter_map_exon_gene = exon_gene_map.begin();
+  for(; iter_map_exon_gene != exon_gene_map.end(); ){
+    unordered_set<string> gene_name;
+    vector<string> id_pairs = delimiter(iter_map_exon_gene -> second, '\t');
+    for(size_t i = 0; i < id_pairs.size(); ++i){
+      delimiter_ret_ref(id_pairs[i], ':', 2, id);
+      gene_name.insert(id[0]);
+    }
+    if(gene_name.size() > 1){
+      exon_gene_map.erase(iter_map_exon_gene ++);
+    }
+    else{
+      ++iter_map_exon_gene;
     }
   }
 }
@@ -98,7 +91,6 @@ void deal_with_cassetteExon(ifstream & exon_anno_file,
 
     string key = fields[1] + KEY_DLM + fields[6] + KEY_DLM + fields[2] + KEY_DLM + fields[3];
     if( (iter_map_ex_g = exon_gene_map.find(key)) != exon_gene_map.end()){
-      //cout << iter_map_ex_g -> first << "\t" << iter_map_ex_g -> second << endl;
       cas_exon_gene_map[key] = iter_map_ex_g -> second;
     }
   }
@@ -210,7 +202,11 @@ void get_inclusion_level(ifstream & expr_esti_file,
   unordered_map<string, string>::const_iterator iter_exon_gene;
   for(iter_exon_gene = cas_exon_gene_map.begin(); 
       iter_exon_gene != cas_exon_gene_map.end(); ++iter_exon_gene){
-    cout << iter_exon_gene -> first << "\t";
+//    cout << iter_exon_gene -> first <<  << "\t";
+    vector<string> pos = delimiter(iter_exon_gene -> first, ':');
+    for(size_t idx = 0; idx < pos.size(); ++idx){
+      cout << pos[idx] << "\t";
+    }
 
     double incl_expr = 0.0;
     vector<string> id_pairs = delimiter(iter_exon_gene -> second, '\t');
@@ -218,6 +214,10 @@ void get_inclusion_level(ifstream & expr_esti_file,
       delimiter_ret_ref(id_pairs[i], ':', 2, id);
       incl_expr += map_gene_expr[id[0]][id[1]];
     }
+
+    //  output the gene name
+    cout << id[0] << "\t";
+
     if(fabs(map_gene_expr_tot[id[0]]) < EPSILON){
       cout << 0.0 << endl;
     }
@@ -225,11 +225,19 @@ void get_inclusion_level(ifstream & expr_esti_file,
       cout << incl_expr / map_gene_expr_tot[id[0]] << endl;
     }
   }
-
-
 }
 
 int main(int argc, char** argv){
+
+  ifstream gtf_file(argv[1]);
+  ofstream out_gtf(argv[2]);
+  unordered_map<string, gene_info> map_g_anno;
+  get_anno_GTF_filtered(gtf_file, map_g_anno);
+  output_anno_GTF_format(map_g_anno, out_gtf);
+
+  return 0;
+
+
   if(argc != 5){
     cerr << "ERROR: " << "invalid parameter!" << endl;
     usage(cerr);
@@ -244,7 +252,6 @@ int main(int argc, char** argv){
     exit(1);
   }
   
-
   // get exon-gene map from the gtf file.
   ifstream gtf_anno_file(argv[1]);
   if( !gtf_anno_file.is_open() ){

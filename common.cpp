@@ -20,6 +20,7 @@
 #include <ctime>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <vector>
 
 #include <unistd.h> // parsing argument
@@ -85,5 +86,12 @@ void delimiter_ret_ref(const string & str, const char deli, const int N, vector<
     t[cur_field++] = str.substr(l_ind,r_ind-l_ind);
   }
   return;
+}
+
+string itoa_ss(int i){
+  stringstream ss (stringstream::in | stringstream::out);
+  ss.str("");
+  ss << i;
+  return ss.str();
 }
 

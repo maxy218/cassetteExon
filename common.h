@@ -220,4 +220,6 @@ vector<int> bin_search_multi(const vector<T>& vec1, const vector<T>& vec2, const
   return result;
 }
 
+string itoa_ss(int i);
+
 #endif // COMMON_H_INCLUDED 

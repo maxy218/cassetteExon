@@ -1,4 +1,4 @@
-SRCS = main.cpp common.cpp 
+SRCS = main.cpp read_gtf.cpp class.cpp common.cpp const.cpp
 OBJS = $(SRCS:.c=.cpp)
 LIBS = ./boost/boost_1_55
 EXECUTABLE = CaExon
