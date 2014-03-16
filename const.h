@@ -27,6 +27,7 @@ using namespace std;
 extern const double EPSILON;
 extern const string KEY_DLM;
 extern const string VAL_DLM;
+extern const size_t REGION_SIZE;
 
 typedef int _chr_coor;
 

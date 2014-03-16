@@ -61,11 +61,6 @@ void deal_with_cassetteExon(ifstream & exon_anno_file,
   }
 }
 
-void usage(ostream& out){
-  out << "exon_incl gtf_anno.gtf cassetteExon_annotation 1/2 expression estimation" << endl;
-  out << "Third parameter: 1 for NURD, 2 for Cufflinks." << endl;
-}
-
 // get map of gene and isoform expression level
 //     key: gene name
 //     value: map of isoform and expression level.
@@ -157,7 +152,7 @@ void get_gene_expr_map(
 
 void get_inclusion_level(ifstream & expr_esti_file, 
     const unordered_map<string, string>& cas_exon_gene_map,
-    const int expr_esti_choice){
+    const int expr_esti_choice, ofstream & inclusion_level_file){
   unordered_map<string, unordered_map<string, double> > map_gene_expr;
   unordered_map<string, double> map_gene_expr_tot;
 
@@ -168,10 +163,9 @@ void get_inclusion_level(ifstream & expr_esti_file,
   unordered_map<string, string>::const_iterator iter_exon_gene;
   for(iter_exon_gene = cas_exon_gene_map.begin(); 
       iter_exon_gene != cas_exon_gene_map.end(); ++iter_exon_gene){
-//    cout << iter_exon_gene -> first <<  << "\t";
     vector<string> pos = delimiter(iter_exon_gene -> first, ':');
     for(size_t idx = 0; idx < pos.size(); ++idx){
-      cout << pos[idx] << "\t";
+      inclusion_level_file << pos[idx] << "\t";
     }
 
     double incl_expr = 0.0;
@@ -182,20 +176,112 @@ void get_inclusion_level(ifstream & expr_esti_file,
     }
 
     //  output the gene name
-    cout << id[0] << "\t";
+    inclusion_level_file << id[0] << "\t";
 
     if(fabs(map_gene_expr_tot[id[0]]) < EPSILON){
-      cout << 0.0 << endl;
+      inclusion_level_file << 0.0 << endl;
     }
     else{
-      cout << incl_expr / map_gene_expr_tot[id[0]] << endl;
+      inclusion_level_file << incl_expr / map_gene_expr_tot[id[0]] << endl;
     }
   }
 }
 
+// return -1 if not found.
+// the return value is not size_t
+template<typename T>
+static int find_in_vector(const vector<T> & vec, const T & x){
+  size_t size = vec.size();
+  for(size_t idx = 0; idx < size; ++idx){
+    if(vec[idx] == x){
+      return idx;
+    }
+  }
+  return -1; // if run here, there's no match result.
+}
+
+/*
+template<typename T>
+static int output_vector(const vector<T> & vec){
+  for(size_t idx = 0; idx < vec.size(); ++idx){
+    cout << vec[idx] << "\t";
+  }
+  cout << endl;
+}
+
+template<typename T1, typename T2>
+static int output_map_key(const unordered_map<T1, T2> & data){
+  typename unordered_map<T1, T2>::const_iterator iter = data.begin();
+  for(; iter != data.end(); ++iter){
+    cout << iter -> first << endl; 
+  }
+  cout << endl;
+}
+*/
+
+// this function will output the 5 regions of cassette exon to file 
+void get_5_regions(ifstream & gene_exons_bndr,
+   const unordered_map<string, string> & cas_exon_gene_map, ofstream & seq_regions_file){
+  string line;
+
+  unordered_map<string, vector<string> > map_gene_exons;
+
+  const static unsigned int col_num_bndr = 4;
+  vector<string> fields = vector<string>(col_num_bndr);
+  while(getline(gene_exons_bndr, line)){
+    delimiter_ret_ref(line, '\t', col_num_bndr, fields);
+    map_gene_exons[fields[0]] = delimiter(fields[3], ',');
+  }
+
+  const static unsigned int col_num_cas_exon = 4;
+  fields = vector<string>(col_num_cas_exon);
+  const static unsigned int col_num_boundary = 2;
+  vector<string> boundary_vec = vector<string>(col_num_boundary);
+  int bound_idx = -1;
+  unordered_map<string, string>::const_iterator iter_cas_exon_gene = cas_exon_gene_map.begin();
+  for(; iter_cas_exon_gene != cas_exon_gene_map.end(); ++iter_cas_exon_gene){
+    delimiter_ret_ref(iter_cas_exon_gene -> first, KEY_DLM[0], col_num_cas_exon, fields);
+    string boundary = fields[2] + ":" + fields[3];
+
+    size_t pos_of_colon = (iter_cas_exon_gene -> second).find(":");
+    string gene = (iter_cas_exon_gene -> second).substr(0, pos_of_colon);
+    const vector<string> & exon_boundaries = map_gene_exons[gene];
+    bound_idx = find_in_vector(exon_boundaries, boundary);
+    if(bound_idx <= 0 || bound_idx >= exon_boundaries.size() - 1){
+      continue;
+    }
+    // get the upper stream exon's right boundary
+    delimiter_ret_ref(exon_boundaries[bound_idx - 1], ':', col_num_boundary, boundary_vec);
+    _chr_coor upper_right = atoi(boundary_vec[1].c_str());
+    seq_regions_file << iter_cas_exon_gene -> first << ":" << 1 << "\t";
+    seq_regions_file << upper_right << "\t" << upper_right + REGION_SIZE << endl;
+
+    // get the middle three regions.
+    _chr_coor left_boundary = atoi(fields[2].c_str());
+    _chr_coor right_boundary = atoi(fields[3].c_str());
+    seq_regions_file << iter_cas_exon_gene -> first << ":" << 2 << "\t";
+    seq_regions_file << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
+    seq_regions_file << iter_cas_exon_gene -> first << ":" << 3 << "\t";
+    seq_regions_file << left_boundary << "\t" << right_boundary << endl;
+    seq_regions_file << iter_cas_exon_gene -> first << ":" << 4 << "\t";
+    seq_regions_file << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
+
+    // get the down streams exons' left boundary.
+    delimiter_ret_ref(exon_boundaries[bound_idx + 1], ':', col_num_boundary, boundary_vec);
+    _chr_coor down_left = atoi(boundary_vec[0].c_str());
+    seq_regions_file << iter_cas_exon_gene -> first << ":" << 5 << "\t";
+    seq_regions_file << down_left - REGION_SIZE << "\t" << down_left << endl;
+  }
+}
+
+void usage(ostream& out){
+  out << "./cassetteExon gtf_anno.gtf cassetteExon_annotation 1|2 expression_estimation_file output_inclusion_level gene_exon_boundary output_5_regions." << endl;
+  out << "Third parameter: 1 for NURD, 2 for Cufflinks." << endl;
+}
+
 int main(int argc, char** argv){
 
-  if(argc != 5){
+  if(argc != 8){
     cerr << "ERROR: " << "invalid parameter!" << endl;
     usage(cerr);
     exit(1);
@@ -231,9 +317,28 @@ int main(int argc, char** argv){
   // get the cassette exon - gene map from the annotation of cassette exon
   ifstream expr_esti_file(argv[4]);
   if( !expr_esti_file.is_open() ){
-    cerr << "ERROR: " << "cannot open file expr_esti_file: " << argv[2] << endl;
+    cerr << "ERROR: " << "cannot open file expr_esti_file: " << argv[4] << endl;
     exit(1);
   }
-  get_inclusion_level(expr_esti_file, cas_exon_gene_map, expr_esti_choice);
+  ofstream inclusion_level_file(argv[5]);
+  if( !inclusion_level_file.is_open() ){
+    cerr << "ERROR: " << "cannot open file inclusion_level_file: " << argv[5] << endl;
+    exit(1);
+  }
+  get_inclusion_level(expr_esti_file, cas_exon_gene_map, expr_esti_choice, inclusion_level_file);
+
+  
+  // get the 5 regions for each cassette exon
+  ifstream gene_exons_bndr(argv[6]);
+  if( !gene_exons_bndr.is_open() ){
+    cerr << "ERROR: " << "cannot open file expr_esti_file: " << argv[6] << endl;
+    exit(1);
+  }
+  ofstream seq_regions_file(argv[7]);
+  if( !seq_regions_file.is_open() ){
+    cerr << "ERROR: " << "cannot open file seq_regions_file: " << argv[7] << endl;
+    exit(1);
+  }
+  get_5_regions(gene_exons_bndr, cas_exon_gene_map, seq_regions_file);
 }
 

@@ -31,7 +31,7 @@ using namespace std;
 using namespace boost;
 
 void usage(ostream& out){
-  out << "gtf_filter origin_gtf_anno filtered_gtf_anno exon_info_file" << endl;
+  out << "anno_preproc origin_gtf_anno filtered_gtf_anno exon_info_file" << endl;
 }
 
 int main(int argc, char** argv){

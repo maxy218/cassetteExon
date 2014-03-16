@@ -26,4 +26,5 @@ using namespace std;
 const double EPSILON = 1e-10;
 const string KEY_DLM = ":";
 const string VAL_DLM = ":";
+const size_t REGION_SIZE = 200;
 

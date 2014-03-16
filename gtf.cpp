@@ -235,7 +235,7 @@ void output_anno_GTF_format(const unordered_map<string, gene_info> & map_g_anno,
 // since there's no overlap, it's also sorted by the end point
 void output_gene_exon_information(const unordered_map<string, gene_info> & map_g_anno,
     ofstream & out_anno){
-    unordered_map<string, gene_info>::const_iterator iter_g_map = map_g_anno.begin();
+  unordered_map<string, gene_info>::const_iterator iter_g_map = map_g_anno.begin();
   for(; iter_g_map != map_g_anno.end(); ++iter_g_map){
     // get the reference of the genn annotation
     const gene_info & g = iter_g_map -> second;
