@@ -12,7 +12,7 @@
 #include "class.h"
 #include "common.h"
 #include "const.h"
-#include "parsing_gtf.h"
+#include "gtf.h"
 
 using namespace std;
 using namespace boost;

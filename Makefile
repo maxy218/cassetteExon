@@ -1,4 +1,4 @@
-SRCS = parsing_gtf.cpp class.cpp common.cpp const.cpp
+SRCS = gtf.cpp class.cpp common.cpp const.cpp
 OBJS = $(SRCS:.c=.cpp)
 LIBS = ./boost/boost_1_55
 
