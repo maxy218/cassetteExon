@@ -1,3 +1,22 @@
+/*
+ * =====================================================================================
+ *
+ *       Filename:  anno_preproc.cpp
+ *
+ *    Description:  some algorithms
+ *
+ *        Version:  1.0
+ *        Created:  03/15/2014 11:03:31 PM
+ *       Revision:  none
+ *       Compiler:  g++
+ *
+ *         Author:  Xinyun Ma
+ *   Organization:  Tsinghua University
+ *
+ * =====================================================================================
+ */
+
+
 #include <fstream>
 #include <iostream>
 #include <string>

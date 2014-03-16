@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  read_gtf.h
+ *       Filename:  gtf.h
  *
  *    Description:  some algorithms
  *
@@ -48,5 +48,10 @@ void output_anno_GTF_format(const unordered_map<string, gene_info> & map_g_anno,
 // since there's no overlap, it's also sorted by the end point
 void output_gene_exon_information(const unordered_map<string, gene_info> & map_g_anno,
     ofstream & out_anno);
+
+//This function deal with gtf file.
+//exon_gene_map: key: position information. (chr)_(pos/neg)_(start)_(end)
+//              value: gene name
+void get_exon_gene_map_gtf(ifstream & gtf_anno_file, unordered_map<string, string>& exon_gene_map);
 
 #endif

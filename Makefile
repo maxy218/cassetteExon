@@ -4,7 +4,7 @@ LIBS = ./boost/boost_1_55
 
 all:
 	g++ -O3 -o anno_preproc -I $(LIBS) anno_preproc.cpp $(SRCS) 
-	g++ -O3 -o exon_incl -I $(LIBS) exon_incl.cpp $(SRCS) 
+	g++ -O3 -o cassetteExon -I $(LIBS) cassetteExon.cpp $(SRCS) 
 
 .PHONY: clean
 

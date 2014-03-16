@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  read_gtf.cpp
+ *       Filename:  gtf.cpp
  *
  *    Description:  some algorithms
  *
@@ -142,6 +142,61 @@ void get_anno_GTF_filtered(ifstream & in_anno,
     }
   }
 }
+
+//This function deal with gtf file.
+//exon_gene_map: key: position information. (chr)_(pos/neg)_(start)_(end)
+//              value: gene name
+void get_exon_gene_map_gtf(ifstream & gtf_anno_file, unordered_map<string, string>& exon_gene_map){
+  string line;
+
+  _chr_coor start_pos, end_pos;
+
+  // the column number of GTF is <= 9
+  const static unsigned int col_num_GTF = 9;
+  vector<string> fields = vector<string>(col_num_GTF);
+
+  while(getline(gtf_anno_file, line)){
+    delimiter_ret_ref(line, '\t', col_num_GTF, fields);
+    // only deal with exon.
+    if(fields[2] != "exon"){
+      continue;
+    }
+
+    string gene_id = get_id_gtf(fields[8], "gene_id");
+    string trans_id = get_id_gtf(fields[8], "transcript_id");
+
+    start_pos = atoi(fields[3].c_str()) - 1; // "-1" is because the GTF starts from 1, not 0 (which is refFlat style.)
+    end_pos = atoi(fields[4].c_str()); // the end position is the same with refflat.
+
+    string key = fields[0] + KEY_DLM + fields[6] + KEY_DLM + itoa_ss(start_pos) + KEY_DLM + itoa_ss(end_pos);
+
+    if(exon_gene_map.find(key) == exon_gene_map.end()){
+      exon_gene_map[key] = gene_id + VAL_DLM + trans_id;
+    }
+    else{
+      exon_gene_map[key] += "\t" + gene_id + VAL_DLM + trans_id;
+    }
+  }
+
+  //erase the exons belonging to multipul genes.
+  vector<string> id = vector<string>(2);
+  unordered_map<string, string>::iterator iter_map_exon_gene = exon_gene_map.begin();
+  for(; iter_map_exon_gene != exon_gene_map.end(); ){
+    unordered_set<string> gene_name;
+    vector<string> id_pairs = delimiter(iter_map_exon_gene -> second, '\t');
+    for(size_t i = 0; i < id_pairs.size(); ++i){
+      delimiter_ret_ref(id_pairs[i], ':', 2, id);
+      gene_name.insert(id[0]);
+    }
+    if(gene_name.size() > 1){
+      exon_gene_map.erase(iter_map_exon_gene ++);
+    }
+    else{
+      ++iter_map_exon_gene;
+    }
+  }
+}
+
 
 void output_anno_GTF_format(const unordered_map<string, gene_info> & map_g_anno,
     ofstream & out_anno){
