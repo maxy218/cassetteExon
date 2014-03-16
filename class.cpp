@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <list>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -87,7 +88,10 @@ gene_info::gene_info(const vector<isoform_anno>& iso_vec){
 }
 
 // return true if ovelap. false if NOT overlap
-static bool exon_overlap(const vector<vector<int> > & starts, const vector<vector<int> > & ends){
+static bool exon_overlap(const gene_info & g){ 
+  const vector<vector<_chr_coor> > & starts = g.exon_starts;
+  const vector<vector<_chr_coor> > & ends = g.exon_ends;
+
   // here we use the property of map that the items are ordered by key.
   // so here we use map, instead of unordered_map of boost
   map<_chr_coor, _chr_coor> map_start_end;
@@ -155,7 +159,7 @@ bool if_gene_anno_valid(const gene_info& gene){
 
   //if the exons are overlapped. it's new for cassette exon project.
   //nurd doesn't filter this case. NURD use "exon splitting instead"
-  if(exon_overlap(gene.exon_starts, gene.exon_ends)){
+  if(exon_overlap(gene)){
     // if the exon_overlap return true, it means it overlaped, so it's invalid.
     return false;
   }

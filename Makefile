@@ -1,10 +1,10 @@
-SRCS = main.cpp read_gtf.cpp class.cpp common.cpp const.cpp
+SRCS = parsing_gtf.cpp class.cpp common.cpp const.cpp
 OBJS = $(SRCS:.c=.cpp)
 LIBS = ./boost/boost_1_55
-EXECUTABLE = CaExon
 
 all:
-	g++ -O3 -o $(EXECUTABLE) -I $(LIBS) $(SRCS) 
+	g++ -O3 -o anno_preproc -I $(LIBS) anno_preproc.cpp $(SRCS) 
+	g++ -O3 -o exon_incl -I $(LIBS) exon_incl.cpp $(SRCS) 
 
 .PHONY: clean
 
