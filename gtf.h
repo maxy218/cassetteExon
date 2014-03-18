@@ -17,8 +17,8 @@
  */
 
 
-#ifndef READ_GTF__H_INCLUDED
-#define READ_GTF__H_INCLUDED
+#ifndef GTF__H_INCLUDED
+#define GTF__H_INCLUDED
 
 #include <fstream>
 #include <string>

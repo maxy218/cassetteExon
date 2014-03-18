@@ -222,4 +222,8 @@ vector<int> bin_search_multi(const vector<T>& vec1, const vector<T>& vec2, const
 
 string itoa_ss(int i);
 
+void to_upper(string & seq);
+
+void reverse(string & seq);
+
 #endif // COMMON_H_INCLUDED 

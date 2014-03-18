@@ -95,3 +95,21 @@ string itoa_ss(int i){
   return ss.str();
 }
 
+void to_upper(string & seq){
+  size_t size = seq.size();
+  for(int i = 0; i < size; ++i){
+    seq[i] = toupper(seq[i]);
+  }
+}
+
+void reverse(string & seq){
+  size_t size = seq.size();
+  if(size == 0){
+    return;
+  }
+  size_t i = 0, j = size - 1;
+  while(i < j){
+    swap(seq[i++], seq[j--]);
+  }
+}
+

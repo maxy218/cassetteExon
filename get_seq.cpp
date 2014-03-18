@@ -27,39 +27,12 @@
 #include <boost/unordered_map.hpp>
 
 #include "common.h"
+#include "fasta.h"
 
 using namespace std;
 using namespace boost;
 
-void to_upper(string & seq){
-  size_t size = seq.size();
-  for(int i = 0; i < size; ++i){
-    seq[i] = toupper(seq[i]);
-  }
-}
-
-/*
-template<typename T>
-void swap(T & a, T & b){
-  T & c = a;
-  a = b;
-  b = c;
-}
-*/
-
-void reverse(string & seq){
-  size_t size = seq.size();
-  if(size == 0){
-    return;
-  }
-  size_t i = 0, j = size - 1;
-  while(i < j){
-    swap(seq[i++], seq[j--]);
-  }
-}
-
 static char table[256];
-
 void reverse_cmpl(string & seq){
 
   table['A'] = 'T';
@@ -72,23 +45,6 @@ void reverse_cmpl(string & seq){
   for(size_t i = 0; i < size; ++i){
     seq[i] = table[seq[i]];
   }
-}
-
-void get_chr_seq(unordered_map<string, string> & map_chr_seq, ifstream & fasta_file){
-   string line;
-   string chr_name;
-   while(getline(fasta_file, line)){
-     if(line.size() == 0){
-       continue;
-     }
-     if(line[0] == '>'){
-       chr_name = line.substr(1, line.size() - 1);
-       map_chr_seq[chr_name] = "";
-     }
-     else{
-       map_chr_seq[chr_name] += line;
-     }
-   }
 }
 
 // region: tab delimited. 
@@ -179,7 +135,7 @@ int main(int argc, char** argv){
       cerr << "ERROR: " << "cannot open file gtf_anno_file: " << filename << endl;
       continue;
     }
-    get_chr_seq(map_chr_seq, fasta_file);
+    get_seq_from_fasta(map_chr_seq, fasta_file);
   }
   closedir(dir_ptr);
 
