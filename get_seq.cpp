@@ -74,9 +74,26 @@ void reverse_cmpl(string & seq){
   }
 }
 
+void get_chr_seq(unordered_map<string, string> & map_chr_seq, ifstream & fasta_file){
+   string line;
+   string chr_name;
+   while(getline(fasta_file, line)){
+     if(line.size() == 0){
+       continue;
+     }
+     if(line[0] == '>'){
+       chr_name = line.substr(1, line.size() - 1);
+       map_chr_seq[chr_name] = "";
+     }
+     else{
+       map_chr_seq[chr_name] += line;
+     }
+   }
+}
+
 // region: tab delimited. 
 // 4 columns in total. 1: chr, 2: strand, 3: left, 4: right
-string get_region(const unordered_map<string, string> & map_chr_seq, const string & region){
+string get_one_region(const unordered_map<string, string> & map_chr_seq, const string & region){
   const static unsigned int col_num_reg = 4;
   vector<string> fields = vector<string>(col_num_reg);
   delimiter_ret_ref(region, '\t', col_num_reg, fields);
@@ -98,21 +115,31 @@ string get_region(const unordered_map<string, string> & map_chr_seq, const strin
   return seq;
 }
 
-void get_chr_seq(unordered_map<string, string> & map_chr_seq, ifstream & fasta_file){
-   string line;
-   string chr_name;
-   while(getline(fasta_file, line)){
-     if(line.size() == 0){
-       continue;
-     }
-     if(line[0] == '>'){
-       chr_name = line.substr(1, line.size() - 1);
-       map_chr_seq[chr_name] = "";
-     }
-     else{
-       map_chr_seq[chr_name] += line;
-     }
-   }
+void get_regs_seq(const unordered_map<string, string> & map_chr_seq, ifstream & in_reg_bndr,
+    ofstream & out_reg_seq){
+  string line;
+  const static unsigned int col_num_reg_bndr = 5;
+  vector<string> fields = vector<string>(col_num_reg_bndr);
+  unordered_map<string, string>::const_iterator iter_chr_seq;
+  while(getline(in_reg_bndr, line)){
+    delimiter_ret_ref(line, '\t', col_num_reg_bndr, fields);
+    iter_chr_seq = map_chr_seq.find(fields[1]);
+    if(iter_chr_seq == map_chr_seq.end()){
+      continue;
+    }
+
+    int left = atoi(fields[3].c_str());
+    int right = atoi(fields[4].c_str());
+    string seq = (iter_chr_seq -> second).substr(left, right - left);
+    to_upper(seq);
+
+    if(fields[2] == "-"){
+      // reverse complementary
+      reverse_cmpl(seq);
+    }
+    out_reg_seq << ">" << fields[0] << endl;
+    out_reg_seq << seq << endl;
+  }
 }
 
 void output_map(unordered_map<string, string> & map_data){
@@ -124,11 +151,11 @@ void output_map(unordered_map<string, string> & map_data){
 }
 
 void usage(ostream& out){
-  out << "./get_seq chr_file_directory exon_boundary" << endl;
+  out << "./get_seq chr_file_directory in_reg_bndr out_region_seq" << endl;
 }
 
 int main(int argc, char** argv){
-  if(argc != 8){
+  if(argc != 4){
     cerr << "ERROR: " << "invalid parameter!" << endl;
     usage(cerr);
     exit(1);
@@ -155,20 +182,19 @@ int main(int argc, char** argv){
     get_chr_seq(map_chr_seq, fasta_file);
   }
   closedir(dir_ptr);
-/*
-  output_map(map_chr_seq);
-*/
 
-  
+  ifstream in_reg_bndr(argv[2]);
+  if( !in_reg_bndr.is_open() ){
+    cerr << "ERROR: " << "cannot open file in_reg_bndr: " << argv[2] << endl;
+    exit(1);
+  }
+  ofstream out_reg_seq(argv[3]);
+  if( !out_reg_seq.is_open() ){
+    cerr << "ERROR: " << "cannot open file out_reg_seq: " << argv[3] << endl;
+    exit(1);
+  }
+  get_regs_seq(map_chr_seq, in_reg_bndr, out_reg_seq);  
 
   return 0;
 }
-
-
-
-
-
-
-
-
 

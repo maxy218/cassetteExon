@@ -250,27 +250,52 @@ void get_5_regions(ifstream & gene_exons_bndr,
     if(bound_idx <= 0 || bound_idx >= exon_boundaries.size() - 1){
       continue;
     }
-    // get the upper stream exon's right boundary
-    delimiter_ret_ref(exon_boundaries[bound_idx - 1], ':', col_num_boundary, boundary_vec);
-    _chr_coor upper_right = atoi(boundary_vec[1].c_str());
-    seq_regions_file << iter_cas_exon_gene -> first << ":" << 1 << "\t";
-    seq_regions_file << upper_right << "\t" << upper_right + REGION_SIZE << endl;
-
-    // get the middle three regions.
-    _chr_coor left_boundary = atoi(fields[2].c_str());
-    _chr_coor right_boundary = atoi(fields[3].c_str());
-    seq_regions_file << iter_cas_exon_gene -> first << ":" << 2 << "\t";
-    seq_regions_file << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
-    seq_regions_file << iter_cas_exon_gene -> first << ":" << 3 << "\t";
-    seq_regions_file << left_boundary << "\t" << right_boundary << endl;
-    seq_regions_file << iter_cas_exon_gene -> first << ":" << 4 << "\t";
-    seq_regions_file << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
-
-    // get the down streams exons' left boundary.
-    delimiter_ret_ref(exon_boundaries[bound_idx + 1], ':', col_num_boundary, boundary_vec);
-    _chr_coor down_left = atoi(boundary_vec[0].c_str());
-    seq_regions_file << iter_cas_exon_gene -> first << ":" << 5 << "\t";
-    seq_regions_file << down_left - REGION_SIZE << "\t" << down_left << endl;
+    if(fields[1] == "+"){
+      // get the upper stream exon's right boundary
+      delimiter_ret_ref(exon_boundaries[bound_idx - 1], ':', col_num_boundary, boundary_vec);
+      _chr_coor upper_right = atoi(boundary_vec[1].c_str());
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "UU" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << upper_right << "\t" << upper_right + REGION_SIZE << endl;
+  
+      // get the middle three regions.
+      _chr_coor left_boundary = atoi(fields[2].c_str());
+      _chr_coor right_boundary = atoi(fields[3].c_str());
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "UD" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "exon" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << left_boundary << "\t" << right_boundary << endl;
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "DU" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
+  
+      // get the down streams exons' left boundary.
+      delimiter_ret_ref(exon_boundaries[bound_idx + 1], ':', col_num_boundary, boundary_vec);
+      _chr_coor down_left = atoi(boundary_vec[0].c_str());
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "DD" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << down_left - REGION_SIZE << "\t" << down_left << endl;
+    }
+    else{
+      // get the upper stream exon's right boundary
+      delimiter_ret_ref(exon_boundaries[bound_idx - 1], ':', col_num_boundary, boundary_vec);
+      _chr_coor upper_right = atoi(boundary_vec[1].c_str());
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "DD" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << upper_right << "\t" << upper_right + REGION_SIZE << endl;
+  
+      // get the middle three regions.
+      _chr_coor left_boundary = atoi(fields[2].c_str());
+      _chr_coor right_boundary = atoi(fields[3].c_str());
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "DU" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "exon" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << left_boundary << "\t" << right_boundary << endl;
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "UD" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
+  
+      // get the down streams exons' left boundary.
+      delimiter_ret_ref(exon_boundaries[bound_idx + 1], ':', col_num_boundary, boundary_vec);
+      _chr_coor down_left = atoi(boundary_vec[0].c_str());
+      seq_regions_file << iter_cas_exon_gene -> first << ":" << "UU" << "\t";
+      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << down_left - REGION_SIZE << "\t" << down_left << endl;
+    }
   }
 }
 
