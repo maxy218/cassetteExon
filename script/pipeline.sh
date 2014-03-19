@@ -1,5 +1,4 @@
 bin_dir=$(cd "$(dirname "$0")"; cd ../bin; pwd)
-echo "bin_dir: " $bin_dir
 
 conf_name=$1
 gene_annotation=`grep "^gene_annotation" ${conf_name} | awk -F"=" '{print $2}'`

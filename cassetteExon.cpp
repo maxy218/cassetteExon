@@ -51,25 +51,6 @@ static int find_in_vector(const vector<T> & vec, const T & x){
   return -1; // if run here, there's no match result.
 }
 
-/*
-template<typename T>
-static int output_vector(const vector<T> & vec){
-  for(size_t idx = 0; idx < vec.size(); ++idx){
-    cout << vec[idx] << "\t";
-  }
-  cout << endl;
-}
-
-template<typename T1, typename T2>
-static int output_map_key(const unordered_map<T1, T2> & data){
-  typename unordered_map<T1, T2>::const_iterator iter = data.begin();
-  for(; iter != data.end(); ++iter){
-    cout << iter -> first << endl; 
-  }
-  cout << endl;
-}
-*/
-
 //map_iso_anno: key: position information. (chr)_(pos/neg)_(start)_(end)
 //              value: isoform name
 void deal_with_cassetteExon(ifstream & in_exon_anno,
@@ -313,51 +294,62 @@ void get_5_regions(ifstream & in_gene_exons_bndr,
     if(bound_idx <= 0 || bound_idx >= exon_boundaries.size() - 1){
       continue;
     }
+    string key = gene + ":" + iter_cas_exon_gene -> first;
     if(fields[1] == "+"){
       // get the upper stream exon's right boundary
       delimiter_ret_ref(exon_boundaries[bound_idx - 1], ':', col_num_boundary, boundary_vec);
       _chr_coor upper_right = atoi(boundary_vec[1].c_str());
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "UU" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << upper_right << "\t" << upper_right + REGION_SIZE << endl;
+      out_seq_regions << key << ":" << "UU" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << upper_right << "\t" << upper_right + REGION_SIZE << endl;
   
       // get the middle three regions.
       _chr_coor left_boundary = atoi(fields[2].c_str());
       _chr_coor right_boundary = atoi(fields[3].c_str());
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "UD" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "exon" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << left_boundary << "\t" << right_boundary << endl;
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "DU" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
+      out_seq_regions << key << ":" << "UD" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
+      out_seq_regions << key << ":" << "exon" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << left_boundary << "\t" << right_boundary << endl;
+      out_seq_regions << key << ":" << "DU" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
   
       // get the down streams exons' left boundary.
       delimiter_ret_ref(exon_boundaries[bound_idx + 1], ':', col_num_boundary, boundary_vec);
       _chr_coor down_left = atoi(boundary_vec[0].c_str());
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "DD" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << down_left - REGION_SIZE << "\t" << down_left << endl;
+      out_seq_regions << key << ":" << "DD" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << down_left - REGION_SIZE << "\t" << down_left << endl;
     }
     else{
       // get the upper stream exon's right boundary
       delimiter_ret_ref(exon_boundaries[bound_idx - 1], ':', col_num_boundary, boundary_vec);
       _chr_coor upper_right = atoi(boundary_vec[1].c_str());
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "DD" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << upper_right << "\t" << upper_right + REGION_SIZE << endl;
+      out_seq_regions << key << ":" << "DD" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << upper_right << "\t" << upper_right + REGION_SIZE << endl;
   
       // get the middle three regions.
       _chr_coor left_boundary = atoi(fields[2].c_str());
       _chr_coor right_boundary = atoi(fields[3].c_str());
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "DU" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "exon" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << left_boundary << "\t" << right_boundary << endl;
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "UD" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
+      out_seq_regions << key << ":" << "DU" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
+      out_seq_regions << key << ":" << "exon" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << left_boundary << "\t" << right_boundary << endl;
+      out_seq_regions << key << ":" << "UD" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
   
       // get the down streams exons' left boundary.
       delimiter_ret_ref(exon_boundaries[bound_idx + 1], ':', col_num_boundary, boundary_vec);
       _chr_coor down_left = atoi(boundary_vec[0].c_str());
-      out_seq_regions << iter_cas_exon_gene -> first << ":" << "UU" << "\t";
-      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << down_left - REGION_SIZE << "\t" << down_left << endl;
+      out_seq_regions << key << ":" << "UU" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t";
+      out_seq_regions << down_left - REGION_SIZE << "\t" << down_left << endl;
     }
   }
 }
