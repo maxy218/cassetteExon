@@ -189,12 +189,13 @@ void get_motif_hit_5_region(ifstream & in_motif_seq, ifstream & in_5_region_seq,
 
 
 void usage(ostream& out){
-  out << "./find_motif in_motif_seq in_5_region_seq.fa filtered_motif out_exon_motif_hit out_exon_sf_hit." << endl;
+  out << "./find_motif in_motif_seq in_5_region_seq.fa out_filtered_motif out_exon_motif_hit out_exon_sf_hit." << endl;
 }
 
 int main(int argc, char** argv){
   if(argc != 6){
-    cerr << "ERROR: " << "invalid parameter!" << endl;
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "invalid parameter!" << endl;
     usage(cerr);
     exit(1);
   }
@@ -202,35 +203,40 @@ int main(int argc, char** argv){
   // input: motif sequence information. 
   ifstream in_motif_seq(argv[1]);
   if( !in_motif_seq.is_open() ){
-    cerr << "ERROR: " << "cannot open file in_motif_seq: " << argv[1] << endl;
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file in_motif_seq: " << argv[1] << endl;
     exit(1);
   }
 
   // input: 5 region sequences. 
   ifstream in_5_region_seq(argv[2]);
   if( !in_5_region_seq.is_open() ){
-    cerr << "ERROR: " << "cannot open file in_5_region_seq: " << argv[2] << endl;
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file in_5_region_seq: " << argv[2] << endl;
     exit(1);
   }
   
   // output: filtered motif. 
-  ofstream filtered_motif(argv[3]);
-  if( !filtered_motif.is_open() ){
-    cerr << "ERROR: " << "cannot open file filtered_motif: " << argv[3] << endl;
+  ofstream out_filtered_motif(argv[3]);
+  if( !out_filtered_motif.is_open() ){
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file out_filtered_motif: " << argv[3] << endl;
     exit(1);
   }
 
   // output: exon -> motif his. 
   ofstream out_exon_motif_hit(argv[4]);
   if( !out_exon_motif_hit.is_open() ){
-    cerr << "ERROR: " << "cannot open file out_exon_motif_hit: " << argv[4] << endl;
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file out_exon_motif_hit: " << argv[4] << endl;
     exit(1);
   }
 
   // output: exon -> splicing factor his. 
   ofstream out_exon_sf_hit(argv[5]);
   if( !out_exon_sf_hit.is_open() ){
-    cerr << "ERROR: " << "cannot open file out_exon_sf_hit: " << argv[5] << endl;
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file out_exon_sf_hit: " << argv[5] << endl;
     exit(1);
   }
 

@@ -38,7 +38,7 @@ using namespace boost;
 
 //map_iso_anno: key: position information. (chr)_(pos/neg)_(start)_(end)
 //              value: isoform name
-void deal_with_cassetteExon(ifstream & exon_anno_file,
+void deal_with_cassetteExon(ifstream & in_exon_anno,
     const unordered_map<string, string>& exon_gene_map,
     unordered_map<string, string>& cas_exon_gene_map){
   string line;
@@ -47,7 +47,7 @@ void deal_with_cassetteExon(ifstream & exon_anno_file,
   vector<string> fields = vector<string>(col_num_cassetteExon);
 
   unordered_map<string, string>::const_iterator iter_map_ex_g;
-  while(getline(exon_anno_file, line)){
+  while(getline(in_exon_anno, line)){
     delimiter_ret_ref(line, '\t', col_num_cassetteExon, fields);
 
     if(fields[4] != "cassetteExon"){
@@ -150,13 +150,13 @@ void get_gene_expr_map(
   }
 }
 
-void get_inclusion_level(ifstream & expr_esti_file, 
+void get_inclusion_level(ifstream & in_expr_esti, 
     const unordered_map<string, string>& cas_exon_gene_map,
-    const int expr_esti_choice, ofstream & inclusion_level_file){
+    const int expr_esti_choice, ofstream & out_inclusion_level){
   unordered_map<string, unordered_map<string, double> > map_gene_expr;
   unordered_map<string, double> map_gene_expr_tot;
 
-  get_gene_expr_map(expr_esti_file, expr_esti_choice, map_gene_expr, map_gene_expr_tot);
+  get_gene_expr_map(in_expr_esti, expr_esti_choice, map_gene_expr, map_gene_expr_tot);
 
   // get the cas exon's inclusion level.
   vector<string> id = vector<string>(2);
@@ -165,7 +165,7 @@ void get_inclusion_level(ifstream & expr_esti_file,
       iter_exon_gene != cas_exon_gene_map.end(); ++iter_exon_gene){
     vector<string> pos = delimiter(iter_exon_gene -> first, ':');
     for(size_t idx = 0; idx < pos.size(); ++idx){
-      inclusion_level_file << pos[idx] << "\t";
+      out_inclusion_level << pos[idx] << "\t";
     }
 
     double incl_expr = 0.0;
@@ -176,13 +176,13 @@ void get_inclusion_level(ifstream & expr_esti_file,
     }
 
     //  output the gene name
-    inclusion_level_file << id[0] << "\t";
+    out_inclusion_level << id[0] << "\t";
 
     if(fabs(map_gene_expr_tot[id[0]]) < EPSILON){
-      inclusion_level_file << 0.0 << endl;
+      out_inclusion_level << 0.0 << endl;
     }
     else{
-      inclusion_level_file << incl_expr / map_gene_expr_tot[id[0]] << endl;
+      out_inclusion_level << incl_expr / map_gene_expr_tot[id[0]] << endl;
     }
   }
 }
@@ -220,15 +220,15 @@ static int output_map_key(const unordered_map<T1, T2> & data){
 */
 
 // this function will output the 5 regions of cassette exon to file 
-void get_5_regions(ifstream & gene_exons_bndr,
-   const unordered_map<string, string> & cas_exon_gene_map, ofstream & seq_regions_file){
+void get_5_regions(ifstream & in_gene_exons_bndr,
+   const unordered_map<string, string> & cas_exon_gene_map, ofstream & out_seq_regions){
   string line;
 
   unordered_map<string, vector<string> > map_gene_exons;
 
   const static unsigned int col_num_bndr = 4;
   vector<string> fields = vector<string>(col_num_bndr);
-  while(getline(gene_exons_bndr, line)){
+  while(getline(in_gene_exons_bndr, line)){
     delimiter_ret_ref(line, '\t', col_num_bndr, fields);
     map_gene_exons[fields[0]] = delimiter(fields[3], ',');
   }
@@ -254,53 +254,53 @@ void get_5_regions(ifstream & gene_exons_bndr,
       // get the upper stream exon's right boundary
       delimiter_ret_ref(exon_boundaries[bound_idx - 1], ':', col_num_boundary, boundary_vec);
       _chr_coor upper_right = atoi(boundary_vec[1].c_str());
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "UU" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << upper_right << "\t" << upper_right + REGION_SIZE << endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "UU" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << upper_right << "\t" << upper_right + REGION_SIZE << endl;
   
       // get the middle three regions.
       _chr_coor left_boundary = atoi(fields[2].c_str());
       _chr_coor right_boundary = atoi(fields[3].c_str());
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "UD" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "exon" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << left_boundary << "\t" << right_boundary << endl;
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "DU" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "UD" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "exon" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << left_boundary << "\t" << right_boundary << endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "DU" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
   
       // get the down streams exons' left boundary.
       delimiter_ret_ref(exon_boundaries[bound_idx + 1], ':', col_num_boundary, boundary_vec);
       _chr_coor down_left = atoi(boundary_vec[0].c_str());
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "DD" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << down_left - REGION_SIZE << "\t" << down_left << endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "DD" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << down_left - REGION_SIZE << "\t" << down_left << endl;
     }
     else{
       // get the upper stream exon's right boundary
       delimiter_ret_ref(exon_boundaries[bound_idx - 1], ':', col_num_boundary, boundary_vec);
       _chr_coor upper_right = atoi(boundary_vec[1].c_str());
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "DD" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << upper_right << "\t" << upper_right + REGION_SIZE << endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "DD" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << upper_right << "\t" << upper_right + REGION_SIZE << endl;
   
       // get the middle three regions.
       _chr_coor left_boundary = atoi(fields[2].c_str());
       _chr_coor right_boundary = atoi(fields[3].c_str());
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "DU" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "exon" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << left_boundary << "\t" << right_boundary << endl;
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "UD" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "DU" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << left_boundary - REGION_SIZE << "\t" << left_boundary << endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "exon" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << left_boundary << "\t" << right_boundary << endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "UD" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << right_boundary << "\t" << right_boundary + REGION_SIZE<< endl;
   
       // get the down streams exons' left boundary.
       delimiter_ret_ref(exon_boundaries[bound_idx + 1], ':', col_num_boundary, boundary_vec);
       _chr_coor down_left = atoi(boundary_vec[0].c_str());
-      seq_regions_file << iter_cas_exon_gene -> first << ":" << "UU" << "\t";
-      seq_regions_file << fields[0] << "\t" << fields[1] << "\t" << down_left - REGION_SIZE << "\t" << down_left << endl;
+      out_seq_regions << iter_cas_exon_gene -> first << ":" << "UU" << "\t";
+      out_seq_regions << fields[0] << "\t" << fields[1] << "\t" << down_left - REGION_SIZE << "\t" << down_left << endl;
     }
   }
 }
 
 void usage(ostream& out){
-  out << "./cassetteExon gtf_anno.gtf cassetteExon_annotation 1|2 expression_estimation_file output_inclusion_level gene_exon_boundary output_5_regions." << endl;
+  out << "./cassetteExon in_gtf_anno.gtf in_cassetteExon_annotation 1|2 in_expression_estimation_file out_inclusion_level in_gene_exon_boundary out_5_regions." << endl;
   out << "Third parameter: 1 for NURD, 2 for Cufflinks." << endl;
 }
 
@@ -315,55 +315,61 @@ int main(int argc, char** argv){
   // 1: NURD, 2: cufflinks
   int expr_esti_choice = atoi(argv[3]);
   if(expr_esti_choice <= 0 || expr_esti_choice >= 3){
-    cerr << "ERROR: " << "invalid choice of expression estimation format." << endl;
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "invalid choice of expression estimation format." << endl;
     usage(cerr);
     exit(1);
   }
   
   // get exon-gene map from the gtf file.
-  ifstream gtf_anno_file(argv[1]);
-  if( !gtf_anno_file.is_open() ){
-    cerr << "ERROR: " << "cannot open file gtf_anno_file: " << argv[1] << endl;
+  ifstream in_gtf_anno(argv[1]);
+  if( !in_gtf_anno.is_open() ){
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file in_gtf_anno: " << argv[1] << endl;
     exit(1);
   }
   unordered_map<string, string> exon_gene_map;
-  get_exon_gene_map_gtf(gtf_anno_file, exon_gene_map);
+  get_exon_gene_map_gtf(in_gtf_anno, exon_gene_map);
 
   // get the cassette exon - gene map from the annotation of cassette exon
-  ifstream exon_anno_file(argv[2]);
-  if( !exon_anno_file.is_open() ){
-    cerr << "ERROR: " << "cannot open file exon_anno_file: " << argv[2] << endl;
+  ifstream in_exon_anno(argv[2]);
+  if( !in_exon_anno.is_open() ){
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file in_exon_anno: " << argv[2] << endl;
     exit(1);
   }
   unordered_map<string, string> cas_exon_gene_map;
-  deal_with_cassetteExon(exon_anno_file, exon_gene_map, cas_exon_gene_map);
+  deal_with_cassetteExon(in_exon_anno, exon_gene_map, cas_exon_gene_map);
 
   //get the expression estimation file
   // get the cassette exon - gene map from the annotation of cassette exon
-  ifstream expr_esti_file(argv[4]);
-  if( !expr_esti_file.is_open() ){
-    cerr << "ERROR: " << "cannot open file expr_esti_file: " << argv[4] << endl;
+  ifstream in_expr_esti(argv[4]);
+  if( !in_expr_esti.is_open() ){
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file in_expr_esti: " << argv[4] << endl;
     exit(1);
   }
-  ofstream inclusion_level_file(argv[5]);
-  if( !inclusion_level_file.is_open() ){
-    cerr << "ERROR: " << "cannot open file inclusion_level_file: " << argv[5] << endl;
+  ofstream out_inclusion_level(argv[5]);
+  if( !out_inclusion_level.is_open() ){
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file out_inclusion_level: " << argv[5] << endl;
     exit(1);
   }
-  get_inclusion_level(expr_esti_file, cas_exon_gene_map, expr_esti_choice, inclusion_level_file);
-
+  get_inclusion_level(in_expr_esti, cas_exon_gene_map, expr_esti_choice, out_inclusion_level);
   
   // get the 5 regions for each cassette exon
-  ifstream gene_exons_bndr(argv[6]);
-  if( !gene_exons_bndr.is_open() ){
-    cerr << "ERROR: " << "cannot open file expr_esti_file: " << argv[6] << endl;
+  ifstream in_gene_exons_bndr(argv[6]);
+  if( !in_gene_exons_bndr.is_open() ){
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file in_gene_exons_bndr: " << argv[6] << endl;
     exit(1);
   }
-  ofstream seq_regions_file(argv[7]);
-  if( !seq_regions_file.is_open() ){
-    cerr << "ERROR: " << "cannot open file seq_regions_file: " << argv[7] << endl;
+  ofstream out_seq_regions(argv[7]);
+  if( !out_seq_regions.is_open() ){
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file out_seq_regions: " << argv[7] << endl;
     exit(1);
   }
-  get_5_regions(gene_exons_bndr, cas_exon_gene_map, seq_regions_file);
+  get_5_regions(in_gene_exons_bndr, cas_exon_gene_map, out_seq_regions);
 }
 

@@ -122,7 +122,7 @@ int main(int argc, char** argv){
   struct dirent * direntp; // each entry
 
   if( (dir_ptr = opendir(chr_seq_dir.c_str())) == NULL ){
-    cerr << "cannot open directory: " << argv[1] << endl;
+    cerr << argv[0] << ": " << "cannot open directory: " << argv[1] << endl;
   }
   unordered_map<string, string> map_chr_seq;
   while( (direntp = readdir(dir_ptr)) != NULL ){
@@ -132,7 +132,7 @@ int main(int argc, char** argv){
     }
     ifstream fasta_file(filename.c_str());
     if( !fasta_file.is_open() ){
-      cerr << "ERROR: " << "cannot open file gtf_anno_file: " << filename << endl;
+      cerr << argv[0] << ": " << "ERROR: " << "cannot open file gtf_anno_file: " << filename << endl;
       continue;
     }
     get_seq_from_fasta(map_chr_seq, fasta_file);
@@ -141,12 +141,14 @@ int main(int argc, char** argv){
 
   ifstream in_reg_bndr(argv[2]);
   if( !in_reg_bndr.is_open() ){
-    cerr << "ERROR: " << "cannot open file in_reg_bndr: " << argv[2] << endl;
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file in_reg_bndr: " << argv[2] << endl;
     exit(1);
   }
   ofstream out_reg_seq(argv[3]);
   if( !out_reg_seq.is_open() ){
-    cerr << "ERROR: " << "cannot open file out_reg_seq: " << argv[3] << endl;
+    cerr << argv[0] << ": " << "ERROR: ";
+    cerr << "cannot open file out_reg_seq: " << argv[3] << endl;
     exit(1);
   }
   get_regs_seq(map_chr_seq, in_reg_bndr, out_reg_seq);  
