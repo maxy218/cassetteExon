@@ -132,7 +132,8 @@ int main(int argc, char** argv){
     }
     ifstream fasta_file(filename.c_str());
     if( !fasta_file.is_open() ){
-      cerr << argv[0] << ": " << "ERROR: " << "cannot open file gtf_anno_file: " << filename << endl;
+      cerr << argv[0] << ": " << "ERROR: ";
+      cerr << "cannot open file gtf_anno_file: " << filename << endl;
       continue;
     }
     get_seq_from_fasta(map_chr_seq, fasta_file);

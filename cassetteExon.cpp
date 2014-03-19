@@ -28,6 +28,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
+#include <dirent.h>
+
 #include "class.h"
 #include "common.h"
 #include "const.h"
@@ -35,6 +37,38 @@
 
 using namespace std;
 using namespace boost;
+
+// return -1 if not found.
+// the return value is not size_t
+template<typename T>
+static int find_in_vector(const vector<T> & vec, const T & x){
+  size_t size = vec.size();
+  for(size_t idx = 0; idx < size; ++idx){
+    if(vec[idx] == x){
+      return idx;
+    }
+  }
+  return -1; // if run here, there's no match result.
+}
+
+/*
+template<typename T>
+static int output_vector(const vector<T> & vec){
+  for(size_t idx = 0; idx < vec.size(); ++idx){
+    cout << vec[idx] << "\t";
+  }
+  cout << endl;
+}
+
+template<typename T1, typename T2>
+static int output_map_key(const unordered_map<T1, T2> & data){
+  typename unordered_map<T1, T2>::const_iterator iter = data.begin();
+  for(; iter != data.end(); ++iter){
+    cout << iter -> first << endl; 
+  }
+  cout << endl;
+}
+*/
 
 //map_iso_anno: key: position information. (chr)_(pos/neg)_(start)_(end)
 //              value: isoform name
@@ -187,37 +221,66 @@ void get_inclusion_level(ifstream & in_expr_esti,
   }
 }
 
-// return -1 if not found.
-// the return value is not size_t
-template<typename T>
-static int find_in_vector(const vector<T> & vec, const T & x){
-  size_t size = vec.size();
-  for(size_t idx = 0; idx < size; ++idx){
-    if(vec[idx] == x){
-      return idx;
+void get_inclusion_level_map(ifstream & in_expr_esti, 
+    const unordered_map<string, string>& cas_exon_gene_map, int expr_esti_choice,
+    unordered_map<string, vector<double> >& map_exon_incls){
+  unordered_map<string, unordered_map<string, double> > map_gene_expr;
+  unordered_map<string, double> map_gene_expr_tot;
+
+  get_gene_expr_map(in_expr_esti, expr_esti_choice, map_gene_expr, map_gene_expr_tot);
+
+  // get the cas exon's inclusion level.
+  vector<string> id = vector<string>(2);
+  unordered_map<string, string>::const_iterator iter_exon_gene;
+  for(iter_exon_gene = cas_exon_gene_map.begin(); 
+      iter_exon_gene != cas_exon_gene_map.end(); ++iter_exon_gene){
+    double incl_expr = 0.0;
+    double incl_lev = 0.0;
+    vector<string> id_pairs = delimiter(iter_exon_gene -> second, '\t');
+    for(size_t i = 0; i < id_pairs.size(); ++i){
+      delimiter_ret_ref(id_pairs[i], ':', 2, id);
+      incl_expr += map_gene_expr[id[0]][id[1]];
+    }
+
+    //  add the gene name to the key
+    string key = id[0] + KEY_DLM + iter_exon_gene -> first;
+
+    if(fabs(map_gene_expr_tot[id[0]]) < EPSILON){
+      incl_lev = 0.0;
+    }
+    else{
+      incl_lev = incl_expr / map_gene_expr_tot[id[0]];
+    }
+
+    if(map_exon_incls.find(key) == map_exon_incls.end()){
+      map_exon_incls[key] = vector<double>(1, incl_lev);
+    }
+    else{
+      map_exon_incls[key].push_back(incl_lev);
     }
   }
-  return -1; // if run here, there's no match result.
 }
 
-/*
-template<typename T>
-static int output_vector(const vector<T> & vec){
-  for(size_t idx = 0; idx < vec.size(); ++idx){
-    cout << vec[idx] << "\t";
+void output_exon_incl_level(
+    const unordered_map<string, vector<double> >& map_exon_incls,
+    const vector<string> & sample_names, ofstream & out_inclusion_level){
+  out_inclusion_level << "exons" << "\t";
+  size_t sample_size = sample_names.size();
+  for(size_t idx = 0; idx < sample_size; ++idx){
+    out_inclusion_level << sample_names[idx] << "\t";
   }
-  cout << endl;
-}
+  out_inclusion_level << endl;
 
-template<typename T1, typename T2>
-static int output_map_key(const unordered_map<T1, T2> & data){
-  typename unordered_map<T1, T2>::const_iterator iter = data.begin();
-  for(; iter != data.end(); ++iter){
-    cout << iter -> first << endl; 
+  unordered_map<string, vector<double> >::const_iterator iter_map;
+  for(iter_map = map_exon_incls.begin(); iter_map != map_exon_incls.end(); ++iter_map){
+    out_inclusion_level << iter_map -> first << "\t";
+    const vector<double> & vec_exon_incl = iter_map -> second;
+    for(size_t idx = 0; idx < vec_exon_incl.size(); ++idx){
+      out_inclusion_level << vec_exon_incl[idx] << "\t";
+    }
+    out_inclusion_level << endl;
   }
-  cout << endl;
 }
-*/
 
 // this function will output the 5 regions of cassette exon to file 
 void get_5_regions(ifstream & in_gene_exons_bndr,
@@ -341,22 +404,42 @@ int main(int argc, char** argv){
   unordered_map<string, string> cas_exon_gene_map;
   deal_with_cassetteExon(in_exon_anno, exon_gene_map, cas_exon_gene_map);
 
-  //get the expression estimation file
-  // get the cassette exon - gene map from the annotation of cassette exon
-  ifstream in_expr_esti(argv[4]);
-  if( !in_expr_esti.is_open() ){
+  string dir_expr_esti = argv[4];
+  DIR * dir_ptr; // the directory
+  struct dirent * direntp; // each entry
+
+  if( (dir_ptr = opendir(dir_expr_esti.c_str())) == NULL ){
     cerr << argv[0] << ": " << "ERROR: ";
-    cerr << "cannot open file in_expr_esti: " << argv[4] << endl;
-    exit(1);
+    cerr << "cannot open directory: " << argv[4] << endl;
   }
+  unordered_map<string, vector<double> > map_exon_incls;
+  vector<string> sample_names;
+  while( (direntp = readdir(dir_ptr)) != NULL ){
+    string filename_no_dir = string(direntp -> d_name);
+    if(filename_no_dir == "." || filename_no_dir == ".."){
+      continue;
+    }
+    sample_names.push_back(filename_no_dir);
+    string filename = dir_expr_esti+ "//" + filename_no_dir;
+    ifstream in_single_expr_esti(filename.c_str());
+    if( !in_single_expr_esti.is_open() ){
+      cerr << argv[0] << ": " << "ERROR: ";
+      cerr << "cannot open file expression file: " << filename << endl;
+      continue;
+    }
+    get_inclusion_level_map(in_single_expr_esti, cas_exon_gene_map,
+        expr_esti_choice, map_exon_incls);
+  }
+  closedir(dir_ptr);
+
   ofstream out_inclusion_level(argv[5]);
   if( !out_inclusion_level.is_open() ){
     cerr << argv[0] << ": " << "ERROR: ";
     cerr << "cannot open file out_inclusion_level: " << argv[5] << endl;
     exit(1);
   }
-  get_inclusion_level(in_expr_esti, cas_exon_gene_map, expr_esti_choice, out_inclusion_level);
-  
+  output_exon_incl_level(map_exon_incls, sample_names, out_inclusion_level);
+
   // get the 5 regions for each cassette exon
   ifstream in_gene_exons_bndr(argv[6]);
   if( !in_gene_exons_bndr.is_open() ){

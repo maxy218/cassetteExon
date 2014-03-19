@@ -57,7 +57,6 @@ echo "geting the sequence of 5 regions(UU, UD, exon, DU, DD)..." | tee -a ${log_
 echo ${bin_dir}"/get_seq" ${reference_genome_dir} ${tmp_output_dir}"/output_5_regions" ${tmp_output_dir}"/out_region_seq" >> ${log_file}
 ${bin_dir}"/get_seq" ${reference_genome_dir} ${tmp_output_dir}"/output_5_regions" ${tmp_output_dir}"/out_region_seq"  2>&1 | tee -a ${log_file}
 ret=$?
-echo ${ret}
 if [ ${ret} -ne 0 ]; then
   echo ${error_info}
   exit ${ret}
@@ -68,7 +67,6 @@ echo "getting the motif hits..." | tee -a ${log_file}
 echo ${bin_dir}"/find_motif" ${sf_motif_map} ${tmp_output_dir}"/out_region_seq" ${tmp_output_dir}"/filtered_motif" ${output_dir}"/out_exon_motif_hit" ${output_dir}"/out_exon_sf_hit" >> ${log_file}
 ${bin_dir}"/find_motif" ${sf_motif_map} ${tmp_output_dir}"/out_region_seq" ${tmp_output_dir}"/filtered_motif" ${output_dir}"/out_exon_motif_hit" ${output_dir}"/out_exon_sf_hit" 2>&1 | tee -a ${log_file}
 ret=$?
-echo ${ret}
 if [ ${ret} -ne 0 ]; then
   echo ${error_info}
   exit ${ret}
